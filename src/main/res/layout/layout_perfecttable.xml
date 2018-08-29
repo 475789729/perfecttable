@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    >
+    <LinearLayout android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:orientation="horizontal"
+        >
+        <LinearLayout android:layout_width="wrap_content"
+               android:layout_height="wrap_content"
+                android:orientation="vertical"
+               android:id="@+id/conner_view"
+            >
+
+        </LinearLayout>
+        <LinearLayout android:layout_width="wrap_content"
+                       android:layout_height="wrap_content"
+                       android:orientation="horizontal"
+                        android:id="@+id/fixColumnHeader"
+            >
+
+        </LinearLayout>
+        <com.liuyao.perfecttable.ColumnHeaderScrollView android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                 android:id="@+id/columnHeaderView"
+                                 android:scrollbars="none"
+            >
+            <LinearLayout android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:id="@+id/columnHeaderView_container"
+                            android:orientation="horizontal"
+                >
+
+            </LinearLayout>
+        </com.liuyao.perfecttable.ColumnHeaderScrollView>
+    </LinearLayout>
+    <LinearLayout android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+        >
+        <com.liuyao.perfecttable.RowHeaderScrollView android:layout_width="wrap_content"
+                     android:layout_height="wrap_content"
+                      android:id="@+id/rowHeaderAndFixColoumCell"
+                     android:scrollbars="none"
+            >
+            <LinearLayout android:layout_width="wrap_content"
+                           android:layout_height="wrap_content"
+                           android:id="@+id/rowHeaderAndFixColoumCell_child"
+                           android:orientation="vertical"
+                >
+
+            </LinearLayout>
+        </com.liuyao.perfecttable.RowHeaderScrollView>
+        <com.liuyao.perfecttable.CustomLinearLayout android:layout_width="wrap_content"
+                                                          android:layout_height="wrap_content"
+                                                          android:orientation="vertical"
+                                                          android:id="@+id/cell_content"
+            >
+
+        </com.liuyao.perfecttable.CustomLinearLayout>
+    </LinearLayout>
+</merge>
