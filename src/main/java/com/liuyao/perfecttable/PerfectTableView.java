@@ -184,6 +184,12 @@ public class PerfectTableView<T> extends LinearLayout {
                        @Override
                        public void run() {
                            adjustCellHeight();
+                           post(new Runnable() {
+                               @Override
+                               public void run() {
+                                   cell_content.syncScroll();
+                               }
+                           });
                        }
                    });
                }
@@ -861,6 +867,9 @@ public class PerfectTableView<T> extends LinearLayout {
      * @param tableData
      */
      public void loadData(TableData<T> tableData){
+          if(tableData == null || tableData.getRowDataList() == null){
+              throw new IllegalArgumentException("table data is null");
+          }
           this.tableData = tableData;
           clearRowView();
           addRowViews();
@@ -895,9 +904,16 @@ public class PerfectTableView<T> extends LinearLayout {
                    content_row.addView(createContentCell(rowIndex, i));
                }
           }
-         rowHeaderAndFixColoumCell_child.addView(row_header);
-         cell_content.addView(content_row);
+         cell_content.addView(content_row, rowIndex);
+         rowHeaderAndFixColoumCell_child.addView(row_header, rowIndex);
      }
+
+     private void deleteRowView(int rowIndex){
+         cell_content.removeViewAt(rowIndex);
+         rowHeaderAndFixColoumCell_child.removeViewAt(rowIndex);
+     }
+
+
 
     @Override
     protected void onAttachedToWindow() {
@@ -950,6 +966,47 @@ public class PerfectTableView<T> extends LinearLayout {
 
     public interface RowHeaderViewFactory<T>{
         public View create(TableData<T> tableData, int rowIndex, T itemData);
+    }
+
+
+    public void insertRow(int rowIndex, T data){
+         if(tableData == null){
+              if(rowIndex == 0){
+                  List<T> dataList = new ArrayList<T>();
+                  dataList.add(data);
+                  loadData(new TableData<T>(dataList));
+              }else{
+                  throw new IllegalArgumentException("");
+              }
+         }else{
+             tableData.getRowDataList().add(rowIndex, data);
+             addRowView(rowIndex);
+             if(attachWindow){
+                 autoFitWidthAndHeight();
+             }else{
+                 needAdjustCellWidthAndHeight = true;
+             }
+         }
+
+    }
+
+    public void notifyDataChange(int rowIndex){
+        T data = tableData.getRowDataList().remove(rowIndex);
+        deleteRowView(rowIndex);
+        insertRow(rowIndex, data);
+    }
+
+    public T deleteRow(int rowIndex){
+          T data = tableData.getRowDataList().remove(rowIndex);
+           deleteRowView(rowIndex);
+           post(new Runnable() {
+               @Override
+               public void run() {
+                   cell_content.syncScroll();
+               }
+           });
+
+           return data;
     }
 
 

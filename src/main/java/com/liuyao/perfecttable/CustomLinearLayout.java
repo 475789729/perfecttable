@@ -258,4 +258,8 @@ public class CustomLinearLayout extends LinearLayout {
             }
         });
     }
+    //手动同步一下
+    public void syncScroll(){
+        scrollTo(columnHeaderScorllView.getScrollX(), rowHeaderScrollView.getScrollY());
+    }
 }
