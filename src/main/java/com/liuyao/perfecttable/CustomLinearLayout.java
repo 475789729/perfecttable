@@ -6,6 +6,7 @@ import android.support.v4.view.ViewConfigurationCompat;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
+import android.view.View;
 import android.view.ViewConfiguration;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
@@ -243,6 +244,15 @@ public class CustomLinearLayout extends LinearLayout {
                  scrollTo(scrollX, getScrollY());
             }
         });
+        this.columnHeaderScorllView.setOnTouchListener(new OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if(event.getAction() == MotionEvent.ACTION_DOWN){
+                    stopScroll();
+                }
+                return false;
+            }
+        });
     }
 
     public RowHeaderScrollView getRowHeaderScrollView() {
@@ -255,6 +265,15 @@ public class CustomLinearLayout extends LinearLayout {
             @Override
             public void onScrollChanged(ScrollView scrollView, int scrollX, int scrollY) {
                 scrollTo(getScrollX(), scrollY);
+            }
+        });
+        this.rowHeaderScrollView.setOnTouchListener(new OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if(event.getAction() == MotionEvent.ACTION_DOWN){
+                    stopScroll();
+                }
+                return false;
             }
         });
     }
