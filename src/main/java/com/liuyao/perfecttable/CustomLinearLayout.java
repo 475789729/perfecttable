@@ -72,6 +72,8 @@ public class CustomLinearLayout extends LinearLayout {
         switch (ev.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 stopScroll();
+                columnHeaderScorllView.stopScroller();
+                rowHeaderScrollView.stopScroller();
                 velocityTracker = VelocityTracker.obtain();
                 mXDown = ev.getRawX();
                 mYDown = ev.getRawY();
@@ -249,6 +251,7 @@ public class CustomLinearLayout extends LinearLayout {
             public boolean onTouch(View v, MotionEvent event) {
                 if(event.getAction() == MotionEvent.ACTION_DOWN){
                     stopScroll();
+                    CustomLinearLayout.this.rowHeaderScrollView.stopScroller();
                 }
                 return false;
             }
@@ -272,6 +275,7 @@ public class CustomLinearLayout extends LinearLayout {
             public boolean onTouch(View v, MotionEvent event) {
                 if(event.getAction() == MotionEvent.ACTION_DOWN){
                     stopScroll();
+                    CustomLinearLayout.this.columnHeaderScorllView.stopScroller();
                 }
                 return false;
             }
