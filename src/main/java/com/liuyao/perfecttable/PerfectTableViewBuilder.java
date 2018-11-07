@@ -3,7 +3,6 @@ package com.liuyao.perfecttable;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
-import android.util.ArrayMap;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,7 +25,7 @@ public class PerfectTableViewBuilder<T> {
 
          private String cellTextColor = "#a6000000";
          private String columnHeaderTextColor;
-         private String rowHeaderTextColor;
+
 
          private int textSizeDp = 16;
          private int textSizeGap = 2;
@@ -102,10 +101,7 @@ public class PerfectTableViewBuilder<T> {
           return this;
       }
 
-      public PerfectTableViewBuilder setRowHeaderTextColor(String colorString){
-           this.rowHeaderTextColor = colorString;
-          return this;
-      }
+
 
       public PerfectTableViewBuilder setTextSizeDp(int textSizeDp){
           this.textSizeDp = textSizeDp;
@@ -119,31 +115,30 @@ public class PerfectTableViewBuilder<T> {
 
       public PerfectTableView<T> create(){
           PerfectTableView<T> tableView = new PerfectTableView<T>(context);
-           this.borderWidthPx = Math.max(0, this.borderWidthPx);
-           tableView.setBorderWidth(this.borderWidthPx);
-           tableView.setBorderColorString(this.borderColorString);
+          this.borderWidthPx = Math.max(0, this.borderWidthPx);
+          tableView.setBorderWidth(this.borderWidthPx);
+          tableView.setBorderColorString(this.borderColorString);
           tableView.setCellHorizontalPadding(rulePadding(this.cellHorizontalPaddingDp));
-           tableView.setCellVerticalPadding(rulePadding(this.cellVerticalPaddingDp));
-            tableView.setSecondHorizontalPadding(rulePadding(this.cellHorizontalPaddingDp - paddingGap));
-             tableView.setSecondVerticalPadding(rulePadding(this.cellVerticalPaddingDp - paddingGap));
-             tableView.setThirdHorizontalPadding(rulePadding(this.cellHorizontalPaddingDp - paddingGap * 2));
-             tableView.setThirdVerticalPadding(rulePadding(this.cellVerticalPaddingDp - paddingGap * 2));
-           tableView.setCellBackgroundColor(this.cellBackgroundColor);
-            tableView.setColumnHeaderBackgroundColor(this.columnHeaderBackgroundColor);
-             tableView.setRowHeaderBackgroundColor(this.rowHeaderBackgroundColor);
-             tableView.setCellTextColor(this.cellTextColor);
-             tableView.setColumnHeaderTextColor(this.columnHeaderTextColor);
-             tableView.setRowHeaderTextColor(this.rowHeaderTextColor);
-             tableView.setRowHeaderViewFactory(this.rowHeaderViewFactory);
-             tableView.setTextSizeDp(textSizeDp);
-              tableView.setSecondTextSizeDp(textSizeDp - textSizeGap);
-              tableView.setThirdTextSizeDp(textSizeDp - textSizeGap - textSizeGap);
+          tableView.setCellVerticalPadding(rulePadding(this.cellVerticalPaddingDp));
+          tableView.setSecondHorizontalPadding(rulePadding(this.cellHorizontalPaddingDp - paddingGap));
+          tableView.setSecondVerticalPadding(rulePadding(this.cellVerticalPaddingDp - paddingGap));
+          tableView.setThirdHorizontalPadding(rulePadding(this.cellHorizontalPaddingDp - paddingGap * 2));
+          tableView.setThirdVerticalPadding(rulePadding(this.cellVerticalPaddingDp - paddingGap * 2));
+          tableView.setCellBackgroundColor(this.cellBackgroundColor);
+          tableView.setColumnHeaderBackgroundColor(this.columnHeaderBackgroundColor);
+          tableView.setRowHeaderBackgroundColor(this.rowHeaderBackgroundColor);
+          tableView.setCellTextColor(this.cellTextColor);
+          tableView.setColumnHeaderTextColor(this.columnHeaderTextColor);
+          tableView.setRowHeaderViewFactory(this.rowHeaderViewFactory);
+          tableView.setTextSizeDp(textSizeDp);
+          tableView.setSecondTextSizeDp(textSizeDp - textSizeGap);
+          tableView.setThirdTextSizeDp(textSizeDp - textSizeGap - textSizeGap);
 
 
               if(this.columnList == null){
                   throw new RuntimeException("columnList is null, can not create table view");
               }
-              tableView.setColumnDefine(makeCombiningColums());
+              tableView.setColumnDefine(makeCombiningColumns());
 
           return tableView;
       }
@@ -158,11 +153,11 @@ public class PerfectTableViewBuilder<T> {
            if(TextUtils.isEmpty(column.getProperty())){
                throw  new RuntimeException("property is null");
            }
-           if(column.getParenetName() != null){
-                if(column.getParenetName().length == 0){
-                     column.setParenetName(null);
+           if(column.getParentName() != null){
+                if(column.getParentName().length == 0){
+                     column.setParentName(null);
                 }else{
-                    for(String title : column.getParenetName()){
+                    for(String title : column.getParentName()){
                         if(TextUtils.isEmpty(title)){
                             throw  new RuntimeException("parenetName is empty");
                         }
@@ -171,7 +166,7 @@ public class PerfectTableViewBuilder<T> {
 
            }
 
-           if(column.getParenetName() != null && column.isFix()){
+           if(column.getParentName() != null && column.isFix()){
                throw new RuntimeException("sorry, column that have parentName cannot setFix(true)");
            }
            if(column.getMaxWidthDp() == null){
@@ -193,12 +188,12 @@ public class PerfectTableViewBuilder<T> {
        }
 
 
-       private List<IColumn> makeCombiningColums(){
+       private List<IColumn> makeCombiningColumns(){
            Map<String, List<Column>> map = new HashMap<String, List<Column>>();
            for(int i = 0; i < this.columnList.size(); i++){
                 Column column = this.columnList.get(i);
-                if(column.getParenetName() != null){
-                    String tag = String.valueOf(column.getParenetName().length) + column.getParenetName()[0];
+                if(column.getParentName() != null){
+                    String tag = String.valueOf(column.getParentName().length) + column.getParentName()[0];
                     if(map.get(tag) == null){
                             List<Column> columnArray = new ArrayList<Column>();
                             columnArray.add(column);
@@ -213,8 +208,8 @@ public class PerfectTableViewBuilder<T> {
            List<IColumn> result = new ArrayList<IColumn>();
             for(int i = 0; i < this.columnList.size(); i++){
                 Column column = this.columnList.get(i);
-                if(column.getParenetName() != null){
-                    String tag = String.valueOf(column.getParenetName().length) + column.getParenetName()[0];
+                if(column.getParentName() != null){
+                    String tag = String.valueOf(column.getParentName().length) + column.getParentName()[0];
                     if(map.get(tag) != null){
                          result.add(CombiningColumn.produce(map.get(tag)));
                          map.remove(tag);

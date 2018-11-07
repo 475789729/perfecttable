@@ -9,12 +9,15 @@ import java.util.List;
 
 /**
  * 列的header可以有多级展示
+ *      |                课程              |
+ *      |          软件  |        硬件     |
+ *      |  java |  php   |  单片机 |  芯片 |
  */
 public class CombiningColumn implements IColumn{
     //最底层节点，其实是普通Column
      private List<Column> columnList;
      //上层节点其实是一些标题，最外层list表示列名的题目从上到下分的级，内层list表示同一级包含了多少的名字
-    private List<List<LevelTitle>> colunmLevelTitle;
+    private List<List<LevelTitle>> columnLevelTitle;
 
     public List<Column> getColumnList() {
         return columnList;
@@ -24,12 +27,12 @@ public class CombiningColumn implements IColumn{
         this.columnList = columnList;
     }
 
-    public List<List<LevelTitle>> getColunmLevelTitle() {
-        return colunmLevelTitle;
+    public List<List<LevelTitle>> getColumnLevelTitle() {
+        return columnLevelTitle;
     }
 
-    public void setColunmLevelTitle(List<List<LevelTitle>> colunmLevelTitle) {
-        this.colunmLevelTitle = colunmLevelTitle;
+    public void setColumnLevelTitle(List<List<LevelTitle>> columnLevelTitle) {
+        this.columnLevelTitle = columnLevelTitle;
     }
     private CombiningColumn(){}
 
@@ -48,14 +51,14 @@ public class CombiningColumn implements IColumn{
            LevelTitle top = new LevelTitle();
            top.setColumnIndexBegin(0);
            top.setColumnIndexEnd(columns.size());
-           top.setName(columns.get(0).getParenetName()[0]);
+           top.setName(columns.get(0).getParentName()[0]);
            mostTopTitle.add(top);
            allTopTitleLevel.add(mostTopTitle);
            //计算出其余层的LevelTitle信息
-           for(int i = 1; i < columns.get(0).getParenetName().length; i++){
+           for(int i = 1; i < columns.get(0).getParentName().length; i++){
                collectEachLevel(allTopTitleLevel, columns, i);
            }
-           combiningColumn.setColunmLevelTitle(allTopTitleLevel);
+           combiningColumn.setColumnLevelTitle(allTopTitleLevel);
            //搞定了父列名，再把真正的子列进行排序
            sortRealColumn(columns, allTopTitleLevel);
            return combiningColumn;
@@ -93,7 +96,7 @@ public class CombiningColumn implements IColumn{
         Collections.sort(columns, new Comparator<Column>() {
             @Override
             public int compare(Column o1, Column o2) {
-                return o1.getParenetName()[levelIndex].compareTo(o2.getParenetName()[levelIndex]);
+                return o1.getParentName()[levelIndex].compareTo(o2.getParentName()[levelIndex]);
             }
         });
         String[] tempSeat = new String[columns.size()];
@@ -102,7 +105,7 @@ public class CombiningColumn implements IColumn{
             for(int j = 0; j < tempSeat.length; j++){
                  if(TextUtils.isEmpty(tempSeat[j])){
                      if(canSitDown(column, allTopTitleLevel, j, levelIndex)){
-                          tempSeat[j] = column.getParenetName()[levelIndex];
+                          tempSeat[j] = column.getParentName()[levelIndex];
                           break;
                      }
                  }
@@ -144,7 +147,7 @@ public class CombiningColumn implements IColumn{
     private static boolean canSitDown(Column column, List<List<LevelTitle>> allTopTitleLevel, int seatIndex, int needCheckLevel){
               for(int i = 0; i < needCheckLevel; i++){
                      String checkString = computeCheckString(allTopTitleLevel, i, seatIndex);
-                     if(!checkString.equals(column.getParenetName()[i])){
+                     if(!checkString.equals(column.getParentName()[i])){
                          return false;
                      }
               }
@@ -182,19 +185,19 @@ public class CombiningColumn implements IColumn{
             if(column.isFix()){
                 throw new RuntimeException("Combining column not support fix,use setFix(false)");
             }
-            if(column.getParenetName() == null || column.getParenetName().length == 0){
-                throw new RuntimeException("when Combining column, each column mush have parenetName ");
+            if(column.getParentName() == null || column.getParentName().length == 0){
+                throw new RuntimeException("when Combining column, each column mush have parentName ");
             }else{
-                for(int n = 0; n < column.getParenetName().length; n++){
-                    if(TextUtils.isEmpty(column.getParenetName()[n])){
-                        throw new RuntimeException("Column set parenetName, but text is null");
+                for(int n = 0; n < column.getParentName().length; n++){
+                    if(TextUtils.isEmpty(column.getParentName()[n])){
+                        throw new RuntimeException("Column set parentName, but text is null");
                     }
                 }
                 if(TextUtils.isEmpty(topName)){
-                    topName = column.getParenetName()[0];
-                    level = column.getParenetName().length;
+                    topName = column.getParentName()[0];
+                    level = column.getParentName().length;
                 }else{
-                    if(column.getParenetName().length != level || !topName.equals(column.getParenetName()[0])){
+                    if(column.getParentName().length != level || !topName.equals(column.getParentName()[0])){
                         throw new RuntimeException("these column can't combining");
                     }
                 }

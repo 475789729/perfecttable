@@ -13,10 +13,8 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Scroller;
 
-import static android.view.View.MeasureSpec.EXACTLY;
-
 public class CustomLinearLayout extends LinearLayout {
-    private ColumnHeaderScrollView columnHeaderScorllView;
+    private ColumnHeaderScrollView columnHeaderScrollView;
     private RowHeaderScrollView rowHeaderScrollView;
     private Scroller mScroller;
     private VelocityTracker velocityTracker;
@@ -38,7 +36,10 @@ public class CustomLinearLayout extends LinearLayout {
     private float mYLastMove;
      public static final int HORIZONTAL = 0;
      public static final int VERTICAL = 1;
+     public static final int NONE = -1;
     private int direction = 0;
+
+    private FlingComputeResultCache flingComputeResultCache;
 
 
     public CustomLinearLayout(Context context) {
@@ -60,7 +61,7 @@ public class CustomLinearLayout extends LinearLayout {
         mScroller = new Scroller(getContext());
         ViewConfiguration configuration = ViewConfiguration.get(getContext());
         // 获取TouchSlop值
-        mTouchSlop = ViewConfigurationCompat.getScaledPagingTouchSlop(configuration);
+        mTouchSlop = configuration.getScaledPagingTouchSlop();
         mMinimumVelocity = configuration.getScaledMinimumFlingVelocity();
     }
 
@@ -72,12 +73,12 @@ public class CustomLinearLayout extends LinearLayout {
         switch (ev.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 stopScroll();
-                columnHeaderScorllView.stopScroller();
+                columnHeaderScrollView.stopScroller();
                 rowHeaderScrollView.stopScroller();
                 velocityTracker = VelocityTracker.obtain();
                 mXDown = ev.getRawX();
                 mYDown = ev.getRawY();
-                direction = -1;
+                direction = NONE;
                 break;
             case MotionEvent.ACTION_MOVE:
                 mXMove = ev.getRawX();
@@ -141,15 +142,15 @@ public class CustomLinearLayout extends LinearLayout {
     private void handleMoveHorizontal(MotionEvent event){
         mXMove = event.getRawX();
         int scrolledX = (int) (mXLastMove - mXMove);
-        columnHeaderScorllView.scrollBy(ruleScrollHorizontalValue(scrolledX), 0);
+        columnHeaderScrollView.scrollBy(ruleScrollHorizontalValue(scrolledX), 0);
         mXLastMove = mXMove;
         velocityTracker.addMovement(event);
     }
 
     private int ruleScrollHorizontalValue(int scrolledX){
         int maxScroll = getColumnHeaderScrollMaxAmount();
-        if(columnHeaderScorllView.getScrollX() + scrolledX > maxScroll){
-            return maxScroll - columnHeaderScorllView.getScrollX();
+        if(columnHeaderScrollView.getScrollX() + scrolledX > maxScroll){
+            return maxScroll - columnHeaderScrollView.getScrollX();
         }else{
             return scrolledX;
         }
@@ -177,15 +178,16 @@ public class CustomLinearLayout extends LinearLayout {
     }
 
     private int getColumnHeaderScrollMaxAmount(){
-        return columnHeaderScorllView.getChildAt(0).getWidth() - columnHeaderScorllView.getWidth();
+        return columnHeaderScrollView.getChildAt(0).getWidth() - columnHeaderScrollView.getWidth();
     }
     private void handleUpHorizontal(MotionEvent event){
         velocityTracker.addMovement(event);
         velocityTracker.computeCurrentVelocity(1000);
         int xVelocity = (int) velocityTracker.getXVelocity();
         if(Math.abs(xVelocity) > mMinimumVelocity){
+            flingComputeResultCache = new FlingComputeResultCache(HORIZONTAL, getColumnHeaderScrollMaxAmount(), getRowHeaderScrollMaxAmount());
             mScroller.fling(getScrollX(), getScrollY(), -xVelocity, 0, 0, getColumnHeaderScrollMaxAmount(), getScrollY(), getScrollY());
-            postInvalidate();
+            postInvalidateOnAnimation();
         }
 
     }
@@ -195,8 +197,9 @@ public class CustomLinearLayout extends LinearLayout {
         velocityTracker.computeCurrentVelocity(1000);
         int yVelocity = (int) velocityTracker.getYVelocity();
         if(Math.abs(yVelocity) > mMinimumVelocity){
+            flingComputeResultCache = new FlingComputeResultCache(VERTICAL, getColumnHeaderScrollMaxAmount(), getRowHeaderScrollMaxAmount());
             mScroller.fling(getScrollX(), getScrollY(), 0, -yVelocity, getScrollX(), getScrollX(), 0, getRowHeaderScrollMaxAmount());
-            postInvalidate();
+            postInvalidateOnAnimation();
         }
     }
 
@@ -204,19 +207,23 @@ public class CustomLinearLayout extends LinearLayout {
     public void computeScroll() {
 
         if (mScroller.computeScrollOffset()) {
-            int scrollX = mScroller.getCurrX();
-            int scrollY = mScroller.getCurrY();
-            if(scrollX < 0 || scrollX > getColumnHeaderScrollMaxAmount()){
-                  mScroller.abortAnimation();
-            }else if(scrollY < 0 || scrollY > getRowHeaderScrollMaxAmount()){
-                mScroller.abortAnimation();
-            }else{
-                rowHeaderScrollView.scrollTo(0, scrollY);
-                columnHeaderScorllView.scrollTo(scrollX, 0);
-                postInvalidate();
-
+            if(flingComputeResultCache.direction == VERTICAL){
+                int scrollY = mScroller.getCurrY();
+                if(scrollY < 0 || scrollY > flingComputeResultCache.rowHeaderScrollMaxAmount){
+                    mScroller.abortAnimation();
+                }else{
+                    rowHeaderScrollView.scrollTo(0, scrollY);
+                    postInvalidateOnAnimation();
+                }
+            }else if(flingComputeResultCache.direction == HORIZONTAL){
+                int scrollX = mScroller.getCurrX();
+                if(scrollX < 0 || scrollX > flingComputeResultCache.columnHeaderScrollMaxAmount){
+                    mScroller.abortAnimation();
+                }else{
+                    columnHeaderScrollView.scrollTo(scrollX, 0);
+                    postInvalidateOnAnimation();
+                }
             }
-
         }
     }
 
@@ -234,19 +241,30 @@ public class CustomLinearLayout extends LinearLayout {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }
 
-    public ColumnHeaderScrollView getColumnHeaderScorllView() {
-        return columnHeaderScorllView;
+    public ColumnHeaderScrollView getColumnHeaderScrollView() {
+        return columnHeaderScrollView;
     }
 
-    public void setColumnHeaderScorllView(ColumnHeaderScrollView columnHeaderScorllView) {
-        this.columnHeaderScorllView = columnHeaderScorllView;
-        this.columnHeaderScorllView.setOnScrollChangeListener(new ColumnHeaderScrollView.OnScrollChangeListener() {
+    public void setColumnHeaderScrollView(ColumnHeaderScrollView columnHeaderScrollView) {
+        this.columnHeaderScrollView = columnHeaderScrollView;
+        this.columnHeaderScrollView.setOnScrollChangeListener(new ColumnHeaderScrollView.OnScrollChangeListener() {
             @Override
-            public void onScrollChanged(HorizontalScrollView scrollView, int scrollX, int scrollY) {
-                 scrollTo(scrollX, getScrollY());
+            public void onScrollChanged(HorizontalScrollView scrollView, final int scrollX, int scrollY) {
+                if(mScroller.computeScrollOffset()){
+                    CustomLinearLayout.this.columnHeaderScrollView.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            scrollTo(scrollX, getScrollY());
+                        }
+                    });
+                }else{
+                    scrollTo(scrollX, getScrollY());
+                }
+
+
             }
         });
-        this.columnHeaderScorllView.setOnTouchListener(new OnTouchListener() {
+        this.columnHeaderScrollView.setOnTouchListener(new OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 if(event.getAction() == MotionEvent.ACTION_DOWN){
@@ -266,8 +284,19 @@ public class CustomLinearLayout extends LinearLayout {
         this.rowHeaderScrollView = rowHeaderScrollView;
         this.rowHeaderScrollView.setOnScrollChangeListener(new RowHeaderScrollView.OnScrollChangeListener() {
             @Override
-            public void onScrollChanged(ScrollView scrollView, int scrollX, int scrollY) {
-                scrollTo(getScrollX(), scrollY);
+            public void onScrollChanged(ScrollView scrollView, int scrollX, final int scrollY) {
+                if(mScroller.computeScrollOffset()){
+                    CustomLinearLayout.this.rowHeaderScrollView.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            scrollTo(getScrollX(), scrollY);
+                        }
+                    });
+                }else{
+                    scrollTo(getScrollX(), scrollY);
+                }
+
+
             }
         });
         this.rowHeaderScrollView.setOnTouchListener(new OnTouchListener() {
@@ -275,7 +304,7 @@ public class CustomLinearLayout extends LinearLayout {
             public boolean onTouch(View v, MotionEvent event) {
                 if(event.getAction() == MotionEvent.ACTION_DOWN){
                     stopScroll();
-                    CustomLinearLayout.this.columnHeaderScorllView.stopScroller();
+                    CustomLinearLayout.this.columnHeaderScrollView.stopScroller();
                 }
                 return false;
             }
@@ -283,6 +312,18 @@ public class CustomLinearLayout extends LinearLayout {
     }
     //手动同步一下
     public void syncScroll(){
-        scrollTo(columnHeaderScorllView.getScrollX(), rowHeaderScrollView.getScrollY());
+        scrollTo(columnHeaderScrollView.getScrollX(), rowHeaderScrollView.getScrollY());
+    }
+
+    public static class FlingComputeResultCache{
+        public int direction;
+        public int columnHeaderScrollMaxAmount;
+        public int rowHeaderScrollMaxAmount;
+        public FlingComputeResultCache(int direction, int columnHeaderScrollMaxAmount, int rowHeaderScrollMaxAmount){
+             this.direction = direction;
+             this.columnHeaderScrollMaxAmount = columnHeaderScrollMaxAmount;
+             this.rowHeaderScrollMaxAmount = rowHeaderScrollMaxAmount;
+        }
+
     }
 }

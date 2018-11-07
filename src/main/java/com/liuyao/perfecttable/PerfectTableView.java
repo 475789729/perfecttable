@@ -10,9 +10,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -59,7 +57,7 @@ public class PerfectTableView<T> extends LinearLayout {
 
     private String cellTextColor = "#a6000000";
     private String columnHeaderTextColor;
-    private String rowHeaderTextColor;
+
 
     private int textSizeDp = 16;
     private int secondTextSizeDp = 14;
@@ -99,7 +97,7 @@ public class PerfectTableView<T> extends LinearLayout {
         columnHeaderView = (ColumnHeaderScrollView) findViewById(R.id.columnHeaderView);
         rowHeaderAndFixColoumCell = (RowHeaderScrollView) findViewById(R.id.rowHeaderAndFixColoumCell);
         cell_content = (CustomLinearLayout) findViewById(R.id.cell_content);
-        cell_content.setColumnHeaderScorllView(columnHeaderView);
+        cell_content.setColumnHeaderScrollView(columnHeaderView);
         cell_content.setRowHeaderScrollView(rowHeaderAndFixColoumCell);
         columnHeaderView_container = (LinearLayout) findViewById(R.id.columnHeaderView_container);
         rowHeaderAndFixColoumCell_child = (LinearLayout) findViewById(R.id.rowHeaderAndFixColoumCell_child);
@@ -309,7 +307,7 @@ public class PerfectTableView<T> extends LinearLayout {
                   int titleLevel_num = cell.getChildCount();
                    ViewGroup real_column_row = (ViewGroup) cell.getChildAt(titleLevel_num - 1);
                   for(int m = titleLevel_num - 2; m >= 0; m--){
-                      List<CombiningColumn.LevelTitle> titles = combiningColumn.getColunmLevelTitle().get(m);
+                      List<CombiningColumn.LevelTitle> titles = combiningColumn.getColumnLevelTitle().get(m);
                       ViewGroup inner_row = (ViewGroup) cell.getChildAt(m);
                       for(int n = 0; n < titles.size(); n++){
                           CombiningColumn.LevelTitle tit = titles.get(n);
@@ -428,7 +426,7 @@ public class PerfectTableView<T> extends LinearLayout {
          if(column.isFix()){
                return fixColumnHeader.getChildAt(columnIndex);
          }else{
-              if(column.getParenetName() == null || column.getParenetName().length == 0){
+              if(column.getParentName() == null || column.getParentName().length == 0){
                     for(int i = 0; i < this.columnList.size(); i++){
                         if(column == this.columnList.get(i)){
                              return  columnHeaderView_container.getChildAt(i - fixColumnHeader.getChildCount());
@@ -462,8 +460,8 @@ public class PerfectTableView<T> extends LinearLayout {
 
     private ViewGroup computeTitleCell(CombiningColumn combiningColumn, CombiningColumn.LevelTitle title){
 
-           for(int i = 0; i < combiningColumn.getColunmLevelTitle().size(); i++){
-                  List<CombiningColumn.LevelTitle> list = combiningColumn.getColunmLevelTitle().get(i);
+           for(int i = 0; i < combiningColumn.getColumnLevelTitle().size(); i++){
+                  List<CombiningColumn.LevelTitle> list = combiningColumn.getColumnLevelTitle().get(i);
                   for(int j = 0; j < list.size(); j++){
                       if(title == list.get(j)){
                           return (ViewGroup) computeTitleCellRow(combiningColumn, i).getChildAt(j);
@@ -679,7 +677,7 @@ public class PerfectTableView<T> extends LinearLayout {
     }
 
     private int[] calculateOneCombiningHeight(CombiningColumn column){
-        int[] h = new int[column.getColunmLevelTitle().size() + 1];
+        int[] h = new int[column.getColumnLevelTitle().size() + 1];
         ViewGroup cell = computeHeaderCell(column);
          if(h.length != cell.getChildCount()){
              throw new RuntimeException("impossible");
@@ -768,13 +766,13 @@ public class PerfectTableView<T> extends LinearLayout {
     private LinearLayout createOneColumnHeaderCellView(CombiningColumn combiningColumn){
         LinearLayout linearLayout = createOneRowLinearLayout(VERTICAL);
         //增加多级标题
-        for(int i = 0; i < combiningColumn.getColunmLevelTitle().size(); i++){
-            List<CombiningColumn.LevelTitle> levelTitleList = combiningColumn.getColunmLevelTitle().get(i);
+        for(int i = 0; i < combiningColumn.getColumnLevelTitle().size(); i++){
+            List<CombiningColumn.LevelTitle> levelTitleList = combiningColumn.getColumnLevelTitle().get(i);
             LinearLayout row = createOneRowLinearLayout(HORIZONTAL);
             linearLayout.addView(row);
             for(int m = 0; m < levelTitleList.size(); m++){
                 CombiningColumn.LevelTitle levelTitle = levelTitleList.get(m);
-                row.addView(createLevelTitleCell(levelTitle.getName(), combiningColumn.getColunmLevelTitle().size()));
+                row.addView(createLevelTitleCell(levelTitle.getName(), combiningColumn.getColumnLevelTitle().size()));
             }
 
         }
@@ -784,7 +782,7 @@ public class PerfectTableView<T> extends LinearLayout {
         List<Column> columns = combiningColumn.getColumnList();
         for(int i = 0; i < columns.size(); i++){
             Column column = columns.get(i);
-           row.addView(createLevelTitleCell(column.getColumnName(), combiningColumn.getColunmLevelTitle().size()));
+           row.addView(createLevelTitleCell(column.getColumnName(), combiningColumn.getColumnLevelTitle().size()));
         }
         return linearLayout;
     }
@@ -1120,13 +1118,7 @@ public class PerfectTableView<T> extends LinearLayout {
         this.columnHeaderTextColor = columnHeaderTextColor;
     }
 
-    public String getRowHeaderTextColor() {
-        return rowHeaderTextColor;
-    }
 
-    public void setRowHeaderTextColor(String rowHeaderTextColor) {
-        this.rowHeaderTextColor = rowHeaderTextColor;
-    }
 
     public int getTextSizeDp() {
         return textSizeDp;

@@ -3,7 +3,7 @@ package com.liuyao.perfecttable;
 public class Column implements IColumn{
      private String columnName;
      //多级列名支持，index 0是最上面，然后一级一级往下面排
-     private String[] parenetName;
+     private String[] parentName;
      //反射取值
      private String property;
      //是否固定列，不许左右滑动
@@ -20,12 +20,12 @@ public class Column implements IColumn{
         this.columnName = columnName;
     }
 
-    public String[] getParenetName() {
-        return parenetName;
+    public String[] getParentName() {
+        return parentName;
     }
 
-    public void setParenetName(String[] parenetName) {
-        this.parenetName = parenetName;
+    public void setParentName(String[] parentName) {
+        this.parentName = parentName;
     }
 
     public String getProperty() {
