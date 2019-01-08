@@ -1,5 +1,6 @@
 ﻿       演示图片:<br>
-        ![Image text](https://github.com/475789729/perfecttable/blob/master/test.gif)
+       ![test](https://github.com/475789729/perfecttable/blob/master/test.gif)
+      
 
        特性:
        1.表格过宽或者过高之后能够产生可滚动效果
