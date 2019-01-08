@@ -1,3 +1,6 @@
+﻿       演示图片:<br>
+        ![Image text](https://raw.github.com/yourName/repositpry/master/yourprojectName/img-folder/test.jpg)
+
        特性:
        1.表格过宽或者过高之后能够产生可滚动效果
        2.第一行作为列名不上下滚动，第一列作为行头，不左右滚动
