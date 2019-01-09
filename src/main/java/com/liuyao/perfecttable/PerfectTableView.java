@@ -47,8 +47,8 @@ public class PerfectTableView<T> extends LinearLayout {
     private int minCellHeightDp = 20;
 
 
-
-    private String borderColorString = "#26000000";
+    //不要带透明度，不要用argb，用rgb
+    private String borderColorString = "#d9d9d9";
     private int borderWidth = 2;
 
     private String cellBackgroundColor = null;
@@ -65,12 +65,13 @@ public class PerfectTableView<T> extends LinearLayout {
 
     public static final String LTRB = "LTRB";
     public static final String RB = "RB";
- //   public static final String TRB = "TRB";
+    public static final String TRB = "TRB";
+    public static final String LRB = "LRB";
 
     private RowHeaderViewFactory rowHeaderViewFactory;
 
     private boolean attachWindow = false;
-    private boolean needAdjustCellWidthAndHeight = true;
+
 
 
 
@@ -87,7 +88,7 @@ public class PerfectTableView<T> extends LinearLayout {
     private void init(){
         LayoutInflater.from(getContext()).inflate(R.layout.layout_perfecttable, this, true);
         this.setOrientation(VERTICAL);
-        this.setBackground(BackgroundDrawableCreater.getBorderDrawable(borderWidth, borderColorString, "LTRB"));
+
         initView();
     }
 
@@ -159,6 +160,10 @@ public class PerfectTableView<T> extends LinearLayout {
 
                }
          }
+         autoFitWidthAndHeight();
+        fixColumnHeader.setBackground(BackgroundDrawableCreater.getBorderDrawable(borderWidth, borderColorString, LTRB));
+        connerView.setBackground(BackgroundDrawableCreater.getBorderDrawable(borderWidth, borderColorString, LTRB, rowHeaderBackgroundColor));
+        this.setBackground(BackgroundDrawableCreater.getBorderDrawable(borderWidth, borderColorString, "LTRB"));
     }
 
 
@@ -169,156 +174,81 @@ public class PerfectTableView<T> extends LinearLayout {
            if(this.columnList == null){
                throw new RuntimeException("you must call method autoFitWidthAndHeight after tableview.setColumnDefine");
            }
-           if(!attachWindow){
-               throw new RuntimeException("you must call method autoFitWidthAndHeight after tableview insert layout");
-           }
-           setLayoutParamsDefault();
-           requestLayout();
-           post(new Runnable() {
-               @Override
-               public void run() {
-                   adjustCellWidth();
-                   post(new Runnable() {
-                       @Override
-                       public void run() {
-                           adjustCellHeight();
-                           post(new Runnable() {
-                               @Override
-                               public void run() {
-                                   cell_content.syncScroll();
-                               }
-                           });
-                       }
-                   });
-               }
-           });
-    }
-
-
-
-    /**
-     * 重设所有单元格的layoutparams为自适应，wrap
-     */
-    private void setLayoutParamsDefault(){
-         if(this.tableData != null){
-             for(int i = 0; i < this.tableData.getRowDataList().size(); i++){
-                 setRowParamsDefault(i);
-             }
-         }
-        setColumnHeaderParamsDefault();
-        setConnerViewParamsDefault();
-    }
-    private void setConnerViewParamsDefault(){
-        connerView.getLayoutParams().width = ViewGroup.LayoutParams.WRAP_CONTENT;
-        connerView.getLayoutParams().height = ViewGroup.LayoutParams.WRAP_CONTENT;
-        connerView.setLayoutParams(connerView.getLayoutParams());
-    }
-    private void setRowParamsDefault(int rowIndex){
-        ViewGroup rowHeaderAndFixColumn_row = (ViewGroup) rowHeaderAndFixColoumCell_child.getChildAt(rowIndex);
-        int rowHeaderAndFixColumn_num = rowHeaderAndFixColumn_row.getChildCount();
-        for(int i = 0; i < rowHeaderAndFixColumn_num; i++){
-            rowHeaderAndFixColumn_row.getChildAt(i).getLayoutParams().width = ViewGroup.LayoutParams.WRAP_CONTENT;
-            rowHeaderAndFixColumn_row.getChildAt(i).getLayoutParams().height = ViewGroup.LayoutParams.WRAP_CONTENT;
-            rowHeaderAndFixColumn_row.getChildAt(i).setLayoutParams(rowHeaderAndFixColumn_row.getChildAt(i).getLayoutParams());
+        adjustCellWidth();
+        adjustCellHeight();
+        if(attachWindow){
+            requestLayout();
+            post(new Runnable() {
+                @Override
+                public void run() {
+                    cell_content.syncScroll();
+                }
+            });
         }
-        ViewGroup content_row = (ViewGroup) cell_content.getChildAt(rowIndex);
-        int nonFixColumn_num = content_row.getChildCount();
-        for(int i = 0; i < nonFixColumn_num; i++){
-            content_row.getChildAt(i).getLayoutParams().width = ViewGroup.LayoutParams.WRAP_CONTENT;
-            content_row.getChildAt(i).getLayoutParams().height = ViewGroup.LayoutParams.WRAP_CONTENT;
-            content_row.getChildAt(i).setLayoutParams(content_row.getChildAt(i).getLayoutParams());
-        }
-    }
-
-    private void setColumnHeaderParamsDefault(){
-         for(int i = 0; i < this.columnList.size(); i++){
-               IColumn iColumn = this.columnList.get(i);
-               if(iColumn instanceof Column){
-                   setNormalColumnHeaderParamsDefault((Column) iColumn);
-               }else{
-                   setCombiningColumnHeaderParamsDefault((CombiningColumn) iColumn);
-               }
-         }
-    }
-
-    private void setNormalColumnHeaderParamsDefault(Column column){
-                View cell = computeHeaderCell(column);
-                cell.getLayoutParams().width = ViewGroup.LayoutParams.WRAP_CONTENT;
-                cell.getLayoutParams().height = ViewGroup.LayoutParams.WRAP_CONTENT;
-                cell.setLayoutParams(cell.getLayoutParams());
-    }
-
-    private void setCombiningColumnHeaderParamsDefault(CombiningColumn column){
-         ViewGroup combiningHeaderCell = computeHeaderCell(column);
-         int childCount = combiningHeaderCell.getChildCount();
-         for(int i = 0; i < childCount; i++){
-             ViewGroup  row_in_combining = (ViewGroup) combiningHeaderCell.getChildAt(i);
-             for(int m = 0; m < row_in_combining.getChildCount(); m++){
-                 ViewGroup realCell = (ViewGroup) row_in_combining.getChildAt(m);
-                 realCell.getLayoutParams().width = ViewGroup.LayoutParams.WRAP_CONTENT;
-                 realCell.getLayoutParams().height = ViewGroup.LayoutParams.WRAP_CONTENT;
-                 realCell.setLayoutParams(realCell.getLayoutParams());
-             }
-         }
     }
 
     /**
      * 作用就是每列宽度对齐
      */
     private void adjustCellWidth(){
-        adjustRowHeaderWidth();
-        allRealColumnfitRuleWidth();
-        adjustCombiningColumnWidth();
-        requestLayout();
+        adjustRowHeaderWidth2();
+        allRealColumnfitRuleWidth2();
+        adjustCombiningColumnWidth2();
+
     }
 
-    private void adjustRowHeaderWidth(){
+    private void adjustRowHeaderWidth2(){
         if(tableData != null && tableData.getRowDataList() != null){
-             List<T> rowData = tableData.getRowDataList();
-             int final_width = 0;
-             for(int i = 0; i < rowData.size(); i++){
-                  View rowHeaderCell = computeRowHeaderCell(i);
-                  if(rowHeaderCell.getWidth() > final_width){
-                      final_width = rowHeaderCell.getWidth();
-                  }
-             }
+            List<T> rowData = tableData.getRowDataList();
+            int final_width = 0;
+            for(int i = 0; i < rowData.size(); i++){
+                View rowHeaderCell = computeRowHeaderCell(i);
+                //如果没有RowHeaderFactory的话,宽度应该是0
+                int width = MeasureHelper.measureWrapWidth(rowHeaderCell);
+                if(width > final_width){
+                    final_width = width;
+                }
+            }
 
             for(int i = 0; i < rowData.size(); i++){
                 View rowHeaderCell = computeRowHeaderCell(i);
+                //仅仅保存一下，不需要setLayoutParams
                 rowHeaderCell.getLayoutParams().width = final_width;
-                rowHeaderCell.setLayoutParams(rowHeaderCell.getLayoutParams());
+
             }
             connerView.getLayoutParams().width = final_width;
-             connerView.setLayoutParams(connerView.getLayoutParams());
+
         }
     }
     private View computeRowHeaderCell(int rowIndex){
         return ((ViewGroup) rowHeaderAndFixColoumCell_child.getChildAt(rowIndex)).getChildAt(0);
     }
+
     /**
      * 调整多级标题的宽度，横跨几列就设置成几列的宽的总和
      */
-    private void adjustCombiningColumnWidth(){
-         for(int i = 0; i < this.columnList.size(); i++){
-             IColumn iColumn = this.columnList.get(i);
-             if(iColumn instanceof  CombiningColumn){
-                  CombiningColumn combiningColumn = (CombiningColumn) iColumn;
-                  ViewGroup cell = (ViewGroup) computeHeaderCell(combiningColumn);
-                  int titleLevel_num = cell.getChildCount();
-                   ViewGroup real_column_row = (ViewGroup) cell.getChildAt(titleLevel_num - 1);
-                  for(int m = titleLevel_num - 2; m >= 0; m--){
-                      List<CombiningColumn.LevelTitle> titles = combiningColumn.getColumnLevelTitle().get(m);
-                      ViewGroup inner_row = (ViewGroup) cell.getChildAt(m);
-                      for(int n = 0; n < titles.size(); n++){
-                          CombiningColumn.LevelTitle tit = titles.get(n);
-                          View tit_cell = inner_row.getChildAt(n);
-                           tit_cell.getLayoutParams().width = computeTotalFixWidth(real_column_row, tit.getColumnIndexBegin(), tit.getColumnIndexEnd());
-                            tit_cell.setLayoutParams(tit_cell.getLayoutParams());
-                      }
-                  }
-             }
-         }
+    private void adjustCombiningColumnWidth2(){
+        for(int i = 0; i < this.columnList.size(); i++){
+            IColumn iColumn = this.columnList.get(i);
+            if(iColumn instanceof  CombiningColumn){
+                CombiningColumn combiningColumn = (CombiningColumn) iColumn;
+                ViewGroup cell = (ViewGroup) computeHeaderCell(combiningColumn);
+                int titleLevel_num = cell.getChildCount();
+                ViewGroup real_column_row = (ViewGroup) cell.getChildAt(titleLevel_num - 1);
+                for(int m = titleLevel_num - 2; m >= 0; m--){
+                    List<CombiningColumn.LevelTitle> titles = combiningColumn.getColumnLevelTitle().get(m);
+                    ViewGroup inner_row = (ViewGroup) cell.getChildAt(m);
+                    for(int n = 0; n < titles.size(); n++){
+                        CombiningColumn.LevelTitle tit = titles.get(n);
+                        View tit_cell = inner_row.getChildAt(n);
+                        tit_cell.getLayoutParams().width = computeTotalFixWidth(real_column_row, tit.getColumnIndexBegin(), tit.getColumnIndexEnd());
+
+                    }
+                }
+            }
+        }
     }
+
 
     /**
      * 调整view宽度到合法值
@@ -329,16 +259,14 @@ public class PerfectTableView<T> extends LinearLayout {
     private void fitRuleWidth(View cell, int minWidthDp, int maxWidthDp){
          int minWidth = DensityTool.dip2px(getContext(), minWidthDp);
           int maxWidth = DensityTool.dip2px(getContext(), maxWidthDp);
-          if(cell.getWidth() < minWidth){
+          int measureWidth = MeasureHelper.measureWrapWidth(cell);
+          if(measureWidth < minWidth){
               cell.getLayoutParams().width = minWidth;
-              cell.setLayoutParams(cell.getLayoutParams());
-          }else if(cell.getWidth() > maxWidth){
+          }else if(measureWidth > maxWidth){
               cell.getLayoutParams().width = maxWidth;
-              cell.setLayoutParams(cell.getLayoutParams());
           }else{
               //exactly化
-              cell.getLayoutParams().width = cell.getWidth();
-              cell.setLayoutParams(cell.getLayoutParams());
+              cell.getLayoutParams().width = measureWidth;
           }
     }
 
@@ -362,60 +290,44 @@ public class PerfectTableView<T> extends LinearLayout {
          return sum;
     }
 
-    /**
-     * 先设置，再取,一次布局后所有单元格宽高都是具体值
-     * @param cell
-     * @return
-     */
-    private int computeFixHeight(View cell){
-        if(cell.getLayoutParams().height == ViewGroup.LayoutParams.MATCH_PARENT || cell.getLayoutParams().height == ViewGroup.LayoutParams.WRAP_CONTENT){
-            throw new RuntimeException("this view not set fix height, but call computeFixHeight");
-        }
-        return cell.getLayoutParams().height;
-    }
+    private void allRealColumnfitRuleWidth2(){
+        for(int i = 0; i < this.realColumnList.size(); i++){
+            Column column = this.realColumnList.get(i);
+            columnFitRuleWidth2(column, i);
 
-    /**
-     * 调整所有列宽度到合法值，只有真正的子列，不包括列的多级标题
-     */
-    private void allRealColumnfitRuleWidth(){
-            for(int i = 0; i < this.realColumnList.size(); i++){
-                Column column = this.realColumnList.get(i);
-                columnFitRuleWidth(column, i);
+        }
+    }
+    private void columnFitRuleWidth2(Column column, int columnIndex){
+        if(tableData == null || tableData.getRowDataList() == null || tableData.getRowDataList().size() == 0){
+            ViewGroup cell = (ViewGroup) computeHeaderCell(column, columnIndex);
+            fitRuleWidth(cell, column.getMinWidthDp(), column.getMaxWidthDp());
+        }else{
+            ViewGroup header_cell = (ViewGroup) computeHeaderCell(column, columnIndex);
+            List<T> rowsData = tableData.getRowDataList();
+            int final_width = MeasureHelper.measureWrapWidth(header_cell);
+            for(int i = 0; i < rowsData.size(); i++){
+
+                View cell = computeContentCell(column, columnIndex, i);
+                int cell_measureWidth = MeasureHelper.measureWrapWidth(cell);
+                if(cell_measureWidth > final_width){
+                    final_width = cell_measureWidth;
+                }
+            }
+            if(final_width < DensityTool.dip2px(getContext(), column.getMinWidthDp())){
+                final_width = DensityTool.dip2px(getContext(), column.getMinWidthDp());
+            }else if(final_width > DensityTool.dip2px(getContext(), column.getMaxWidthDp())){
+                final_width = DensityTool.dip2px(getContext(), column.getMaxWidthDp());
+            }
+            header_cell.getLayoutParams().width = final_width;
+
+            for(int i = 0; i < rowsData.size(); i++){
+
+                View cell = computeContentCell(column, columnIndex, i);
+                cell.getLayoutParams().width = final_width;
 
             }
+        }
     }
-
-    private void columnFitRuleWidth(Column column, int columnIndex){
-           if(tableData == null || tableData.getRowDataList() == null || tableData.getRowDataList().size() == 0){
-              ViewGroup cell = (ViewGroup) computeHeaderCell(column, columnIndex);
-              fitRuleWidth(cell, column.getMinWidthDp(), column.getMaxWidthDp());
-           }else{
-               ViewGroup header_cell = (ViewGroup) computeHeaderCell(column, columnIndex);
-               List<T> rowsData = tableData.getRowDataList();
-               int final_width = header_cell.getWidth();
-               for(int i = 0; i < rowsData.size(); i++){
-
-                  View cell = computeContentCell(column, columnIndex, i);
-                  if(cell.getWidth() > final_width){
-                      final_width = cell.getWidth();
-                  }
-               }
-               if(final_width < DensityTool.dip2px(getContext(), column.getMinWidthDp())){
-                   final_width = DensityTool.dip2px(getContext(), column.getMinWidthDp());
-               }else if(final_width > DensityTool.dip2px(getContext(), column.getMaxWidthDp())){
-                   final_width = DensityTool.dip2px(getContext(), column.getMaxWidthDp());
-               }
-               header_cell.getLayoutParams().width = final_width;
-               header_cell.setLayoutParams(header_cell.getLayoutParams());
-               for(int i = 0; i < rowsData.size(); i++){
-
-                   View cell = computeContentCell(column, columnIndex, i);
-                   cell.getLayoutParams().width = final_width;
-                   cell.setLayoutParams(cell.getLayoutParams());
-               }
-           }
-    }
-
 
     /**
      * 查找对应的单元格
@@ -525,8 +437,6 @@ public class PerfectTableView<T> extends LinearLayout {
     private void adjustCellHeight(){
         adjustContentRowsCellHeight();
         adjustColumnHeaderHeight();
-        requestLayout();
-
     }
 
     private void adjustContentRowsCellHeight(){
@@ -541,8 +451,16 @@ public class PerfectTableView<T> extends LinearLayout {
          List<View> list = getRowAllCell(rowIndex);
          int final_height = 0;
          for(int i = 0; i < list.size(); i++){
-             if(list.get(i).getHeight() > final_height){
-                 final_height = list.get(i).getHeight();
+             View cell = list.get(i);
+             if(BuildConfig.DEBUG){
+                 boolean error = cell.getLayoutParams().width == ViewGroup.LayoutParams.WRAP_CONTENT || cell.getLayoutParams().width == ViewGroup.LayoutParams.MATCH_PARENT;
+                 if(error){
+                     throw new RuntimeException("impossible");
+                 }
+             }
+             int measureHeight = MeasureHelper.measureWrapHeight(cell, cell.getLayoutParams().width);
+             if(measureHeight > final_height){
+                 final_height = measureHeight;
              }
          }
         if(final_height < DensityTool.dip2px(getContext(), minCellHeightDp)){
@@ -550,7 +468,6 @@ public class PerfectTableView<T> extends LinearLayout {
         }
         for(int i = 0; i < list.size(); i++){
             list.get(i).getLayoutParams().height = final_height;
-            list.get(i).setLayoutParams(list.get(i).getLayoutParams());
         }
     }
 
@@ -569,13 +486,12 @@ public class PerfectTableView<T> extends LinearLayout {
 
     private void adjustColumnHeaderHeight(){
          int maxHeight_normalColumn = calculateNormalColumnMaxHeight();
-         int maxHeight_CombiningColumn  = calculateCombiningColumnMaxHeight();
+        List<Map<String, Object>>  combiningColumnHeight = calculateCombiningHeight();
+         int maxHeight_CombiningColumn  = calculateCombiningColumnMaxHeight(combiningColumnHeight);
         int final_height = Math.max(maxHeight_normalColumn, maxHeight_CombiningColumn);
          if(final_height < DensityTool.dip2px(getContext(), minCellHeightDp)){
              final_height = DensityTool.dip2px(getContext(), minCellHeightDp);
          }
-        List<Map<String, Object>>  combiningColumnHeight = calculateCombiningHeight();
-        alignVerticalLevel(combiningColumnHeight);
         stretchLevelTitle(final_height, combiningColumnHeight);
         stretchNormalColumnHeader(final_height);
         stretchConnerViewHeight(final_height);
@@ -583,7 +499,7 @@ public class PerfectTableView<T> extends LinearLayout {
     }
      private void stretchConnerViewHeight(int final_height){
            connerView.getLayoutParams().height = final_height;
-           connerView.setLayoutParams(connerView.getLayoutParams());
+
      }
     private void stretchLevelTitle(int finalHeight, List<Map<String, Object>>  combiningColumnHeight){
            for(Map<String, Object> map : combiningColumnHeight){
@@ -611,7 +527,7 @@ public class PerfectTableView<T> extends LinearLayout {
             for(int j = 0; j < row.getChildCount(); j++){
                 View little_cell = row.getChildAt(j);
                 little_cell.getLayoutParams().height = heightArray[i];
-                little_cell.setLayoutParams(little_cell.getLayoutParams());
+
             }
         }
     }
@@ -621,7 +537,7 @@ public class PerfectTableView<T> extends LinearLayout {
               if(iColumn instanceof  Column){
                   View cell = computeHeaderCell((Column) iColumn);
                   cell.getLayoutParams().height = finalHeight;
-                  cell.setLayoutParams(cell.getLayoutParams());
+
               }
           }
     }
@@ -631,16 +547,28 @@ public class PerfectTableView<T> extends LinearLayout {
             IColumn iColumn = this.columnList.get(i);
             if(iColumn instanceof Column){
                 View view = computeHeaderCell((Column) iColumn);
-                if(view.getHeight() > maxHeight){
-                    maxHeight = view.getHeight();
+                if(BuildConfig.DEBUG){
+                    int paramsWidth = view.getLayoutParams().width;
+                    boolean error = paramsWidth == ViewGroup.LayoutParams.MATCH_PARENT || paramsWidth == ViewGroup.LayoutParams.WRAP_CONTENT;
+                    if(error){
+                        throw new RuntimeException("");
+                    }
+                }
+                int measureHeight = MeasureHelper.measureWrapHeight(view, view.getLayoutParams().width);
+                if(measureHeight > maxHeight){
+                    maxHeight = measureHeight;
                 }
             }
         }
         return maxHeight;
     }
 
-    private int calculateCombiningColumnMaxHeight(){
-        List<Map<String, Object>>  combiningColumnHeight = calculateCombiningHeight();
+    /**
+     * 注意：会修改入参，详见alignVerticalLevel方法，会把每层的高度对齐并且修改成一致
+     * @param combiningColumnHeight
+     * @return
+     */
+    private int calculateCombiningColumnMaxHeight(List<Map<String, Object>>  combiningColumnHeight){
         alignVerticalLevel(combiningColumnHeight);
         int maxHeight = 0;
         for(int i = 0; i < combiningColumnHeight.size(); i++){
@@ -674,6 +602,7 @@ public class PerfectTableView<T> extends LinearLayout {
             }
         }
         return list;
+
     }
 
     private int[] calculateOneCombiningHeight(CombiningColumn column){
@@ -687,15 +616,28 @@ public class PerfectTableView<T> extends LinearLayout {
                 int maxHeight = 0;
                 for(int j = 0; j < inner_row.getChildCount(); j++){
                     View little_cell = inner_row.getChildAt(j);
-                    if(little_cell.getHeight() > maxHeight){
-                        maxHeight = little_cell.getHeight();
+                    if(BuildConfig.DEBUG){
+                        int little_cell_paramsWidth = little_cell.getLayoutParams().width;
+                        boolean error = little_cell_paramsWidth == ViewGroup.LayoutParams.WRAP_CONTENT || little_cell_paramsWidth == ViewGroup.LayoutParams.MATCH_PARENT;
+                        if(error){
+                            throw new RuntimeException("impossible");
+                        }
+                    }
+                    int measureHeight = MeasureHelper.measureWrapHeight(little_cell, little_cell.getLayoutParams().width);
+                    if(measureHeight > maxHeight){
+                        maxHeight = measureHeight;
                     }
                 }
              h[i] = maxHeight;
          }
         return h;
+
     }
 
+    /**
+     * 表格可能存在多个组合列 ，如果分层数量一样。 那么对齐这些层。 比如:一个组合列有3层， 另外一个组合列也是3层。就可以对齐
+     * @param list
+     */
     private void alignVerticalLevel(List<Map<String, Object>> list){
            ArrayList<Integer> done = new ArrayList<Integer>();
            HashMap<Integer, List<int[]>> map = new HashMap<Integer, List<int[]>>();
@@ -712,6 +654,8 @@ public class PerfectTableView<T> extends LinearLayout {
            for(int i = 0; i < done.size(); i++){
                changeValueForAlignVerticalLevel(map.get(done.get(i)));
            }
+
+
     }
 
     private void changeValueForAlignVerticalLevel(List<int[]> list){
@@ -750,7 +694,7 @@ public class PerfectTableView<T> extends LinearLayout {
     }
 
     private  LinearLayout createOneColumnHeaderCellView(Column column){
-           String borderLTRB = RB;
+           String borderLTRB = TRB;
 
             LinearLayout cell = createOneCellView(borderLTRB, columnHeaderBackgroundColor);
            TextView textView = new TextView(getContext());
@@ -829,9 +773,11 @@ public class PerfectTableView<T> extends LinearLayout {
      * @return
      */
     private LinearLayout createRowHeaderCell(int rowIndex){
-        LinearLayout cell = createOneCellView(RB, rowHeaderBackgroundColor);
+        LinearLayout cell = createOneCellView(LRB, rowHeaderBackgroundColor);
         if(rowHeaderViewFactory != null){
             cell.addView(rowHeaderViewFactory.create(tableData, rowIndex, tableData.getRowDataList().get(rowIndex)));
+        }else{
+            cell.setPadding(0, 0, 0, 0);
         }
         return cell;
     }
@@ -871,11 +817,8 @@ public class PerfectTableView<T> extends LinearLayout {
           this.tableData = tableData;
           clearRowView();
           addRowViews();
-          if(attachWindow){
-              autoFitWidthAndHeight();
-          }else{
-              needAdjustCellWidthAndHeight = true;
-          }
+          autoFitWidthAndHeight();
+
      }
 
     /**
@@ -921,10 +864,6 @@ public class PerfectTableView<T> extends LinearLayout {
             throw new RuntimeException("tableview must set columns before insert Layout");
         }
 
-        if(needAdjustCellWidthAndHeight){
-            needAdjustCellWidthAndHeight = false;
-            autoFitWidthAndHeight();
-        }
     }
     @Override
     protected void onDetachedFromWindow() {
@@ -979,11 +918,7 @@ public class PerfectTableView<T> extends LinearLayout {
          }else{
              tableData.getRowDataList().add(rowIndex, data);
              addRowView(rowIndex);
-             if(attachWindow){
-                 autoFitWidthAndHeight();
-             }else{
-                 needAdjustCellWidthAndHeight = true;
-             }
+             autoFitWidthAndHeight();
          }
 
     }

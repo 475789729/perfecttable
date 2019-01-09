@@ -14,7 +14,7 @@ public class PerfectTableViewBuilder<T> {
          private int cellHorizontalPaddingDp = 5;
          private int cellVerticalPaddingDp = 3;
          private int borderWidthPx = 2;
-         private String borderColorString = "#26000000";
+         private String borderColorString = "#d9d9d9";
          private int defaultMaxColumnWidthDp = 150;
           private int defaultMinColumnWidthDp = 30;
          private List<Column> columnList;
@@ -67,7 +67,7 @@ public class PerfectTableViewBuilder<T> {
       }
 
     /**
-     *
+     *注意，不要带透明度的颜色，使用rgb，禁止使用argb，否则某些局部边框叠加在一起会产生色差
      * @param borderColorString  例如"#000000"
      * @return
      */
