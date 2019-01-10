@@ -161,11 +161,30 @@ public class PerfectTableView<T> extends LinearLayout {
                }
          }
          autoFitWidthAndHeight();
+
         fixColumnHeader.setBackground(BackgroundDrawableCreater.getBorderDrawable(borderWidth, borderColorString, LTRB));
         connerView.setBackground(BackgroundDrawableCreater.getBorderDrawable(borderWidth, borderColorString, LTRB, rowHeaderBackgroundColor));
-        this.setBackground(BackgroundDrawableCreater.getBorderDrawable(borderWidth, borderColorString, "LTRB"));
+        this.setBackground(BackgroundDrawableCreater.getBorderDrawable(borderWidth, borderColorString, LTRB));
+        drawLostBorder();
     }
 
+    /**
+     * 表格有一些border缺失，这个方法会充分考虑各种情况，尽量补全border
+     * 解决各种边框不对的bug
+     * 目前发现的bug:1.当设置了columnHeaderBackgroundColor时候，第一行最左边有一点border缺失
+     *             :2.当设置了columnHeaderBackgroundColor时候,组合列最上面border缺失
+     */
+    private void drawLostBorder(){
+        if(rowHeaderViewFactory == null){
+              boolean hasFixColumn = fixColumnHeader.getChildCount() > 0;
+              if(hasFixColumn){
+                  fixColumnHeader.getChildAt(0).setBackground(BackgroundDrawableCreater.getBorderDrawable(borderWidth, borderColorString, LTRB, columnHeaderBackgroundColor));
+              }else{
+                  columnHeaderView_container.getChildAt(0).setBackground(BackgroundDrawableCreater.getBorderDrawable(borderWidth, borderColorString, LTRB, columnHeaderBackgroundColor));
+              }
+        }
+
+    }
 
     /**
      * 自动调整控件的单元格大小
@@ -191,13 +210,13 @@ public class PerfectTableView<T> extends LinearLayout {
      * 作用就是每列宽度对齐
      */
     private void adjustCellWidth(){
-        adjustRowHeaderWidth2();
-        allRealColumnfitRuleWidth2();
-        adjustCombiningColumnWidth2();
+        adjustRowHeaderWidth();
+        allRealColumnfitRuleWidth();
+        adjustCombiningColumnWidth();
 
     }
 
-    private void adjustRowHeaderWidth2(){
+    private void adjustRowHeaderWidth(){
         if(tableData != null && tableData.getRowDataList() != null){
             List<T> rowData = tableData.getRowDataList();
             int final_width = 0;
@@ -227,7 +246,7 @@ public class PerfectTableView<T> extends LinearLayout {
     /**
      * 调整多级标题的宽度，横跨几列就设置成几列的宽的总和
      */
-    private void adjustCombiningColumnWidth2(){
+    private void adjustCombiningColumnWidth(){
         for(int i = 0; i < this.columnList.size(); i++){
             IColumn iColumn = this.columnList.get(i);
             if(iColumn instanceof  CombiningColumn){
@@ -290,7 +309,7 @@ public class PerfectTableView<T> extends LinearLayout {
          return sum;
     }
 
-    private void allRealColumnfitRuleWidth2(){
+    private void allRealColumnfitRuleWidth(){
         for(int i = 0; i < this.realColumnList.size(); i++){
             Column column = this.realColumnList.get(i);
             columnFitRuleWidth2(column, i);
@@ -716,7 +735,12 @@ public class PerfectTableView<T> extends LinearLayout {
             linearLayout.addView(row);
             for(int m = 0; m < levelTitleList.size(); m++){
                 CombiningColumn.LevelTitle levelTitle = levelTitleList.get(m);
-                row.addView(createLevelTitleCell(levelTitle.getName(), combiningColumn.getColumnLevelTitle().size()));
+                String rtlb = RB;
+                if(i == 0){
+                    //顶层需要有top border，否则当设置了columnBackgroundColor的时候，组合列top border会缺失
+                    rtlb = TRB;
+                }
+                row.addView(createLevelTitleCell(levelTitle.getName(), combiningColumn.getColumnLevelTitle().size(), rtlb));
             }
 
         }
@@ -726,7 +750,7 @@ public class PerfectTableView<T> extends LinearLayout {
         List<Column> columns = combiningColumn.getColumnList();
         for(int i = 0; i < columns.size(); i++){
             Column column = columns.get(i);
-           row.addView(createLevelTitleCell(column.getColumnName(), combiningColumn.getColumnLevelTitle().size()));
+           row.addView(createLevelTitleCell(column.getColumnName(), combiningColumn.getColumnLevelTitle().size(), RB));
         }
         return linearLayout;
     }
@@ -739,7 +763,7 @@ public class PerfectTableView<T> extends LinearLayout {
      * @param totalLevelNum 总共多少级父列名，级数多的话相应调整padding和字体大小
      * @return
      */
-    private LinearLayout createLevelTitleCell(String name, int totalLevelNum){
+    private LinearLayout createLevelTitleCell(String name, int totalLevelNum,  String borderLTRB){
             int cellHorizontalPaddin;
             int cellVerticalPaddin;
             int textSize;
@@ -752,9 +776,6 @@ public class PerfectTableView<T> extends LinearLayout {
                  cellVerticalPaddin = thirdVerticalPaddingDp;
                  textSize = thirdTextSizeDp;
             }
-
-            String borderLTRB = RB;
-
 
             LinearLayout cell = createOneCellView(borderLTRB, columnHeaderBackgroundColor, cellHorizontalPaddin, cellVerticalPaddin);
            TextView textView = new TextView(getContext());
@@ -882,12 +903,25 @@ public class PerfectTableView<T> extends LinearLayout {
          return  cell_container;
 
     }
-    private LinearLayout createOneCellView(String borderLTRB, String backgroundColor, int cellHorriblePaddin, int cellVerticalPaddin){
+
+    /**
+     *
+     * @param borderLTRB
+     * @param backgroundColor
+     * @param cellHorizontalPadding 单位是dp
+     * @param cellVerticalPadding 单位是dp
+     * @return
+     */
+    private LinearLayout createOneCellView(String borderLTRB, String backgroundColor, int cellHorizontalPadding, int cellVerticalPadding){
         LinearLayout cell_container = new LinearLayout(getContext());
         cell_container.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         cell_container.setGravity(Gravity.CENTER);
         cell_container.setOrientation(VERTICAL);
-        cell_container.setPadding(cellHorriblePaddin, cellVerticalPaddin, cellHorriblePaddin, cellVerticalPaddin);
+        cell_container.setPadding(DensityTool.dip2px(getContext(), cellHorizontalPadding),
+                                   DensityTool.dip2px(getContext(), cellVerticalPadding),
+                                   DensityTool.dip2px(getContext(), cellHorizontalPadding),
+                                   DensityTool.dip2px(getContext(), cellVerticalPadding)
+                                   );
         cell_container.setBackground(BackgroundDrawableCreater.getBorderDrawable(borderWidth, borderColorString, borderLTRB, backgroundColor));
         return  cell_container;
 

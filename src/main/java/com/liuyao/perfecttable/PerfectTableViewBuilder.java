@@ -30,7 +30,7 @@ public class PerfectTableViewBuilder<T> {
          private int textSizeDp = 16;
          private int textSizeGap = 2;
 
-         private int paddingGap = 2;
+         private int paddingGap = 1;
 
 
          private PerfectTableView.RowHeaderViewFactory<T> rowHeaderViewFactory;
