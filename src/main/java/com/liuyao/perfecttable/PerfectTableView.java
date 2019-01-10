@@ -29,6 +29,8 @@ public class PerfectTableView<T> extends LinearLayout {
     private RowHeaderScrollView rowHeaderAndFixColoumCell;
     private CustomLinearLayout cell_content;
     private LinearLayout rowHeaderAndFixColoumCell_child;
+    //解决:设置rowHeaderBackground并且没有connerView并且没有固定列情况下border缺失了一点点的bug。用一个多余的view来遮罩一下，调制成border相同的颜色和尺寸
+    private LinearLayout lostBorderView;
 
     //所有子列平铺，fix列应该排序提前，组合列不支持fix属性
     private List<Column> realColumnList;
@@ -93,6 +95,7 @@ public class PerfectTableView<T> extends LinearLayout {
     }
 
     private void initView(){
+        lostBorderView = (LinearLayout) findViewById(R.id.lostBorderView);
         connerView = findViewById(R.id.conner_view);
         fixColumnHeader = (LinearLayout) findViewById(R.id.fixColumnHeader);
         columnHeaderView = (ColumnHeaderScrollView) findViewById(R.id.columnHeaderView);
@@ -165,25 +168,61 @@ public class PerfectTableView<T> extends LinearLayout {
         fixColumnHeader.setBackground(BackgroundDrawableCreater.getBorderDrawable(borderWidth, borderColorString, LTRB));
         connerView.setBackground(BackgroundDrawableCreater.getBorderDrawable(borderWidth, borderColorString, LTRB, rowHeaderBackgroundColor));
         this.setBackground(BackgroundDrawableCreater.getBorderDrawable(borderWidth, borderColorString, LTRB));
-        drawLostBorder();
+
     }
 
     /**
      * 表格有一些border缺失，这个方法会充分考虑各种情况，尽量补全border
      * 解决各种边框不对的bug
-     * 目前发现的bug:1.当设置了columnHeaderBackgroundColor时候，第一行最左边有一点border缺失
-     *             :2.当设置了columnHeaderBackgroundColor时候,组合列最上面border缺失
+     * 目前发现的bug:1.当设置了rowHeaderBackground并且没有connerView并且没有固定列情况下border缺失
+     *
      */
     private void drawLostBorder(){
-        if(rowHeaderViewFactory == null){
+        lostBorderView.setVisibility(GONE);
+        if(rowHeaderViewFactory == null || tableData == null){
               boolean hasFixColumn = fixColumnHeader.getChildCount() > 0;
               if(hasFixColumn){
                   fixColumnHeader.getChildAt(0).setBackground(BackgroundDrawableCreater.getBorderDrawable(borderWidth, borderColorString, LTRB, columnHeaderBackgroundColor));
               }else{
-                  columnHeaderView_container.getChildAt(0).setBackground(BackgroundDrawableCreater.getBorderDrawable(borderWidth, borderColorString, LTRB, columnHeaderBackgroundColor));
+                  //只能弄个view遮罩一下。。。没其他办法
+                  if(columnHeaderView_container.getChildCount() > 0){
+                      lostBorderView.setVisibility(VISIBLE);
+                      lostBorderView.getLayoutParams().width = borderWidth;
+                      lostBorderView.setBackgroundColor(Color.parseColor(borderColorString));
+                      lostBorderView.getLayoutParams().height = calculateLostBorderHeight();
+                      lostBorderView.setLayoutParams(lostBorderView.getLayoutParams());
+                  }
+
               }
+        }else if(rowHeaderViewFactory != null && tableData != null && tableData.getRowDataList() != null && tableData.getRowDataList().size() > 0){
+            //有connerView的情况下，不要造成局部border加粗了
+            boolean hasFixColumn = fixColumnHeader.getChildCount() > 0;
+            if(hasFixColumn){
+                fixColumnHeader.getChildAt(0).setBackground(BackgroundDrawableCreater.getBorderDrawable(borderWidth, borderColorString, TRB, columnHeaderBackgroundColor));
+            }
         }
 
+    }
+
+    //计算遮罩View的高度，视觉上要弥补缺失的border
+    private int calculateLostBorderHeight(){
+        View view = columnHeaderView_container.getChildAt(0);
+         //可能的层级: view > LinearLayout > TextView结构下
+         //可能的层级: view > 多个行LinearLayout > 每行一个或者多个LinearLayout作为cell > TextView
+        if(view.getLayoutParams().height > 0){
+            return  view.getLayoutParams().height;
+        }else{
+            ViewGroup viewGroup = (ViewGroup) view;
+            //列名的行数
+            int rowNumber = viewGroup.getChildCount();
+            int sumHeight = 0;
+            for(int i = 0; i < rowNumber; i++){
+                ViewGroup rowView  = (ViewGroup) viewGroup.getChildAt(i);
+                View firstCell = rowView.getChildAt(0);
+                sumHeight += firstCell.getLayoutParams().height;
+            }
+            return sumHeight;
+        }
     }
 
     /**
@@ -195,7 +234,21 @@ public class PerfectTableView<T> extends LinearLayout {
            }
         adjustCellWidth();
         adjustCellHeight();
+        drawLostBorder();
         if(attachWindow){
+            //fix bug
+            //光是requestLayout并不够，各个子view都要requestLayout一下
+            if(columnHeaderView_container.getChildCount() > 0){
+                columnHeaderView_container.getChildAt(0).requestLayout();
+            }
+            fixColumnHeader.requestLayout();
+            connerView.requestLayout();
+            if(rowHeaderAndFixColoumCell_child.getChildCount() > 0){
+                rowHeaderAndFixColoumCell_child.getChildAt(0).requestLayout();
+            }
+            if(cell_content.getChildCount() > 0){
+                cell_content.getChildAt(0).requestLayout();
+            }
             requestLayout();
             post(new Runnable() {
                 @Override
@@ -312,11 +365,11 @@ public class PerfectTableView<T> extends LinearLayout {
     private void allRealColumnfitRuleWidth(){
         for(int i = 0; i < this.realColumnList.size(); i++){
             Column column = this.realColumnList.get(i);
-            columnFitRuleWidth2(column, i);
+            columnFitRuleWidth(column, i);
 
         }
     }
-    private void columnFitRuleWidth2(Column column, int columnIndex){
+    private void columnFitRuleWidth(Column column, int columnIndex){
         if(tableData == null || tableData.getRowDataList() == null || tableData.getRowDataList().size() == 0){
             ViewGroup cell = (ViewGroup) computeHeaderCell(column, columnIndex);
             fitRuleWidth(cell, column.getMinWidthDp(), column.getMaxWidthDp());
@@ -884,7 +937,6 @@ public class PerfectTableView<T> extends LinearLayout {
         if(columnList == null || columnList.size() == 0){
             throw new RuntimeException("tableview must set columns before insert Layout");
         }
-
     }
     @Override
     protected void onDetachedFromWindow() {

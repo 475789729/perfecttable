@@ -19,6 +19,9 @@
             >
 
         </LinearLayout>
+        <FrameLayout android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+            >
         <com.liuyao.perfecttable.ColumnHeaderScrollView android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                  android:id="@+id/columnHeaderView"
@@ -32,6 +35,15 @@
 
             </LinearLayout>
         </com.liuyao.perfecttable.ColumnHeaderScrollView>
+            <LinearLayout android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:visibility="gone"
+                            android:orientation="vertical"
+                             android:id="@+id/lostBorderView"
+                >
+
+            </LinearLayout>
+        </FrameLayout>
     </LinearLayout>
     <LinearLayout android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
