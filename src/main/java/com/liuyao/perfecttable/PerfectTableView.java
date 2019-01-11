@@ -190,7 +190,7 @@ public class PerfectTableView<T> extends LinearLayout {
                       lostBorderView.getLayoutParams().width = borderWidth;
                       lostBorderView.setBackgroundColor(Color.parseColor(borderColorString));
                       lostBorderView.getLayoutParams().height = calculateLostBorderHeight();
-                      lostBorderView.setLayoutParams(lostBorderView.getLayoutParams());
+                      refreshLayoutParams(lostBorderView);
                   }
 
               }
@@ -234,21 +234,25 @@ public class PerfectTableView<T> extends LinearLayout {
            }
         adjustCellWidth();
         adjustCellHeight();
+        //还需要解决一个bug，当左边的rowheader部分的scrollview宽度为0时候或者无法显示，无法调用scrollview.fling启动惯性滚动
+        //那么如果有多行数据并且没有rowHeaderViewFactory没有固定列的情况，人为地给scrollView一个像素宽度，让它在界面上显示
+        boolean hasFixColumn = fixColumnHeader.getChildCount() > 0;
+        if(rowHeaderViewFactory == null && tableData != null && tableData.getRowDataList() != null
+                && tableData.getRowDataList().size() > 0 && !hasFixColumn){
+            //人为地给一像素的宽度
+            rowHeaderAndFixColoumCell_child.getLayoutParams().width = 1;
+            refreshLayoutParams(rowHeaderAndFixColoumCell_child);
+            //矫正1像素的位置
+            MarginUtils.setMargins(cell_content, -1, 0, 0, 0);
+        }else{
+            //收回一像素的宽度
+            rowHeaderAndFixColoumCell_child.getLayoutParams().width = ViewGroup.LayoutParams.WRAP_CONTENT;
+            refreshLayoutParams(rowHeaderAndFixColoumCell_child);
+            //矫正一像素的位置
+            MarginUtils.setMargins(cell_content, 0, 0, 0, 0);
+        }
         drawLostBorder();
         if(attachWindow){
-            //fix bug
-            //光是requestLayout并不够，各个子view都要requestLayout一下
-            if(columnHeaderView_container.getChildCount() > 0){
-                columnHeaderView_container.getChildAt(0).requestLayout();
-            }
-            fixColumnHeader.requestLayout();
-            connerView.requestLayout();
-            if(rowHeaderAndFixColoumCell_child.getChildCount() > 0){
-                rowHeaderAndFixColoumCell_child.getChildAt(0).requestLayout();
-            }
-            if(cell_content.getChildCount() > 0){
-                cell_content.getChildAt(0).requestLayout();
-            }
             requestLayout();
             post(new Runnable() {
                 @Override
@@ -267,6 +271,12 @@ public class PerfectTableView<T> extends LinearLayout {
         allRealColumnfitRuleWidth();
         adjustCombiningColumnWidth();
 
+    }
+
+    private void refreshLayoutParams(View v){
+        if(v.getLayoutParams() != null){
+            v.setLayoutParams(v.getLayoutParams());
+        }
     }
 
     private void adjustRowHeaderWidth(){
@@ -539,7 +549,9 @@ public class PerfectTableView<T> extends LinearLayout {
             final_height = DensityTool.dip2px(getContext(), minCellHeightDp);
         }
         for(int i = 0; i < list.size(); i++){
-            list.get(i).getLayoutParams().height = final_height;
+             View v = list.get(i);
+             v.getLayoutParams().height = final_height;
+             refreshLayoutParams(v);
         }
     }
 
@@ -571,7 +583,7 @@ public class PerfectTableView<T> extends LinearLayout {
     }
      private void stretchConnerViewHeight(int final_height){
            connerView.getLayoutParams().height = final_height;
-
+           refreshLayoutParams(connerView);
      }
     private void stretchLevelTitle(int finalHeight, List<Map<String, Object>>  combiningColumnHeight){
            for(Map<String, Object> map : combiningColumnHeight){
@@ -599,6 +611,7 @@ public class PerfectTableView<T> extends LinearLayout {
             for(int j = 0; j < row.getChildCount(); j++){
                 View little_cell = row.getChildAt(j);
                 little_cell.getLayoutParams().height = heightArray[i];
+                refreshLayoutParams(little_cell);
 
             }
         }
@@ -609,6 +622,7 @@ public class PerfectTableView<T> extends LinearLayout {
               if(iColumn instanceof  Column){
                   View cell = computeHeaderCell((Column) iColumn);
                   cell.getLayoutParams().height = finalHeight;
+                  refreshLayoutParams(cell);
 
               }
           }
